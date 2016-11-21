@@ -37,14 +37,14 @@ def log_gamma_lanczos(z):
     small = np.log(np.pi) - T.log(T.sin(np.pi * z)) - log_gamma_lanczos_sub(flip_z)
     big = log_gamma_lanczos_sub(z)
     return T.switch(z < 0.5, small, big)
-   
+
 ## version that isn't vectorised, since g is small anyway
 def log_gamma_lanczos_sub(z): #expanded version
     # Coefficients used by the GNU Scientific Library
     g = 7
     p = np.array([0.99999999999980993, 676.5203681218851, -1259.1392167224028,
                   771.32342877765313, -176.61502916214059, 12.507343278686905,
-                  -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7])                    
+                  -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7])
     z = z - 1
     x = p[0]
     for i in range(1, g+2):
@@ -58,9 +58,9 @@ def log_gamma_lanczos_sub(z): #vectorised version
     g = 7
     p = np.array([0.99999999999980993, 676.5203681218851, -1259.1392167224028,
                   771.32342877765313, -176.61502916214059, 12.507343278686905,
-                  -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7])  
+                  -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7])
     z = z - 1
-    
+
     zs = T.shape_padleft(z, 1) + T.shape_padright(T.arange(1, g+2), z.ndim)
     x = T.sum(T.shape_padright(p[1:], z.ndim) / zs, axis=0) + p[0]
 	t = z + g + 0.5
@@ -72,9 +72,9 @@ def log_gamma_lanczos_sub(z): #vectorised version
 def lazytheanofunc(on_unused_input='warn', mode='FAST_RUN'):
 	def theanofunction(*args, **kwargs):
 		f = [None]
-		if not kwargs.has_key('on_unused_input'):
+		if not ('on_unused_input' in kwargs):
 			kwargs['on_unused_input'] = on_unused_input
-		if not kwargs.has_key('mode'):
+		if not ('mode' in kwargs):
 			kwargs['mode'] = mode
 		def func(*args2, **kwargs2):
 			if f[0] == None:
@@ -82,5 +82,3 @@ def lazytheanofunc(on_unused_input='warn', mode='FAST_RUN'):
 			return f[0](*args2, **kwargs2)
 		return func
 	return theanofunction
-
-

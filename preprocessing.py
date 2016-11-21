@@ -13,25 +13,25 @@ def PCA(x_in, cutoff=0.99, global_sd=True, toFloat=True):
         x_sd = x.std()
     x /= x_sd
     x_cov = x.dot(x.T) / x.shape[1]
-    print "Performing eigen-decomposition for PCA..."
+    print( "Performing eigen-decomposition for PCA...")
     eigval, eigvec = np.linalg.eig(x_cov)
-    print "Done."
+    print( "Done.")
     if cutoff <= 1:
         n_used = ((eigval.cumsum() / eigval.sum()) < cutoff).sum()
-        print 'PCA cutoff:', cutoff, 'n_used:', n_used
+        print( 'PCA cutoff:', cutoff, 'n_used:', n_used)
     else:
         n_used = cutoff
     eigval = eigval[:n_used].reshape((-1,1))
     eigvec = eigvec[:,:n_used]
     f_enc, f_dec = PCA_encdec(eigvec, eigval, x_center, x_sd, toFloat)
     pca_params = {'eigval':eigval, 'eigvec':eigvec, 'x_center':x_center, 'x_sd':x_sd}
-    
+
     return f_enc, f_dec, pca_params
 
 def PCA_fromfile(fname, toFloat=False):
     pca = ndict.loadz(fname)
     return PCA_encdec(pca['eigvec'],pca['eigval'],pca['x_center'],pca['x_sd'], toFloat)
-        
+
 def PCA_encdec(eigvec, eigval, x_center, x_sd, toFloat=False):
     def f_enc(x, n_batch=1000):
         result = np.zeros((eigvec.shape[1], x.shape[1]))
@@ -39,13 +39,13 @@ def PCA_encdec(eigvec, eigval, x_center, x_sd, toFloat=False):
             _x = x[:,i:(i+n_batch)]
             if toFloat: _x = _x / 256.
             result[:,i:(i+n_batch)] = eigvec.T.dot((_x - x_center) / x_sd) / np.sqrt(eigval)
-        return result 
+        return result
     def f_dec(x, bounded01=True):
         result = eigvec.dot(x * np.sqrt(eigval)) * x_sd + x_center
         if bounded01: result = np.maximum(0, np.minimum(1, result))
         return result
     return f_enc, f_dec
-    
+
 def normalize_random(x, global_sd=True, toFloat=False):
     if toFloat: x = x / 256.
     x_center = x.mean(axis=1, keepdims=True)
@@ -110,5 +110,3 @@ def preprocess_normalize01(x, global_sd=True):
     def f_enc(x): return (x - x_center) / x_sd
     def f_dec(x): return np.maximum(np.minimum(x * x_sd + x_center, 1), 0)
     return f_enc, f_dec, (x_center, x_sd)
-
-

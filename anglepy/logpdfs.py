@@ -2,7 +2,7 @@ import numpy as np
 import theano
 import theano.tensor as T
 import math
-import misc
+import anglepy.misc
 
 # library with theano PDF functions
 
@@ -17,7 +17,7 @@ def normal2(x, mean, logvar):
 def laplace(x, mean, logvar):
     sd = T.exp(0.5 * logvar)
     return - abs(x - mean) / sd - 0.5 * logvar - np.log(2)
-    
+
 def standard_normal(x):
 	return c - x**2 / 2
 
@@ -31,5 +31,5 @@ def standard_laplace(x):
 def studentt(x, v):
 	gamma1 = misc.log_gamma_lanczos((v+1)/2.)
 	gamma2 = misc.log_gamma_lanczos(0.5*v)
-	
+
 	return gamma1 - 0.5 * T.log(v * np.pi) - gamma2 - (v+1)/2. * T.log(1 + (x*x)/v)

@@ -8,5 +8,6 @@ elif sys.argv[1] == 'mnist':
     if len(sys.argv) == 4:
         n_hidden = [int(sys.argv[2])] * int(sys.argv[3])
     gpulearn_z_x.main(dataset='mnist', n_z=50, n_hidden=n_hidden, seed=0, comment='', gfx=True)
-
-#gpulearn_z_x.main(n_data=50000, dataset='svhn_pca', n_z=300, n_hidden=(500,500), seed=0)
+elif sys.argv[1] == 'hyperspectral':
+    n_hidden = (500,500)
+    gpulearn_z_x.main(dataset='hyper', n_z = 50, n_hidden=n_hidden, seed=0, comment='', gfx=True)

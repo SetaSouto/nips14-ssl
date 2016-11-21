@@ -57,11 +57,11 @@ def tile_raster_images(X, img_shape, tile_shape, tile_spacing=(0, 0),
 
     """
     X = X * 1.0 # converts ints to floats
-    
+
     if colorImg:
         channelSize = X.shape[1]/3
         X = (X[:,0:channelSize], X[:,channelSize:2*channelSize], X[:,2*channelSize:3*channelSize], None)
-    
+
     assert len(img_shape) == 2
     assert len(tile_shape) == 2
     assert len(tile_spacing) == 2
@@ -91,8 +91,8 @@ def tile_raster_images(X, img_shape, tile_shape, tile_spacing=(0, 0),
         else:
             channel_defaults = [0., 0., 0., 1.]
 
-        
-        for i in xrange(4):
+
+        for i in range(4):
             if X[i] is None:
                 # if channel is None, fill it with zeros of the correct
                 # dtype
@@ -106,8 +106,8 @@ def tile_raster_images(X, img_shape, tile_shape, tile_spacing=(0, 0),
                 if scale:
                     xi = (X[i] - X[i].min()) / (X[i].max() - X[i].min())
                 out_array[:, :, i] = tile_raster_images(xi, img_shape, tile_shape, tile_spacing, False, output_pixel_vals)
-        
-    
+
+
         return out_array
 
     else:
@@ -119,8 +119,8 @@ def tile_raster_images(X, img_shape, tile_shape, tile_spacing=(0, 0),
         out_array = np.zeros(out_shape, dtype='uint8' if output_pixel_vals else X.dtype)
 
 
-        for tile_row in xrange(tile_shape[0]):
-            for tile_col in xrange(tile_shape[1]):
+        for tile_row in range(tile_shape[0]):
+            for tile_col in range(tile_shape[1]):
                 if tile_row * tile_shape[1] + tile_col < X.shape[0]:
                     if scale:
                         # if we should scale values to be between 0 and 1
@@ -156,5 +156,3 @@ def imgshow(plt, w, dim_input, scale=False, colorImg=False, convertImgs=False, t
     pil_image = mat_to_img(w, dim_input, scale, colorImg, tile_spacing)
     plt.imshow(pil_image, cmap=pylab.gray(), origin='upper')
     return pil_image
-
-

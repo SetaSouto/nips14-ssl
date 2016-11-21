@@ -7,7 +7,7 @@ import time
 import os
 import tarfile
 import theano
-    
+
 def getCols(d, ifrom, ito):
     result = {}
     for i in d:
@@ -28,7 +28,7 @@ def sum(ds):
     return d
 
 # ds: multiple dictionaries
-# result: cols ifrom to ito from 'ds' 
+# result: cols ifrom to ito from 'ds'
 def getcols_multiple(ds, ifrom, ito):
     result = []
     for d in ds:
@@ -86,7 +86,7 @@ def flatten_multiple(ds):
     for d in ds:
         result.append(flatten(d))
     return np.concatenate(result)
-    
+
 # flat: 1-dim ndarray
 # d: dict with certain names/shapes
 # result: dict with same shape as 'd' and values of 'flat'
@@ -119,7 +119,7 @@ def merge(ds, prefixes):
 
 # Inverse of merge(.): unmerge ndict
 # d: merged ndict
-# prefixes: prefixes    
+# prefixes: prefixes
 def unmerge(d, prefixes):
     results = [{} for _ in range(len(prefixes))]
     for key in d:
@@ -129,7 +129,7 @@ def unmerge(d, prefixes):
                 results[j][key[len(prefix):]] = d[key]
     return results
 
-# Get shapes of elements of d as a dict    
+# Get shapes of elements of d as a dict
 def getShapes(d):
     shapes = {}
     for i in d:
@@ -144,13 +144,13 @@ def setShapes(d, shapes):
     return result
 
 def p(d):
-    for i in d: print i+'\n', d[i]
+    for i in d: print(i+'\n', d[i])
 
 def pNorm(d):
-    for i in d: print i, numpy.linalg.norm(d[i])
+    for i in d: print(i, numpy.linalg.norm(d[i]))
 
 def pShape(d):
-    for i in d: print i, d[i].shape
+    for i in d: print(i, d[i].shape)
 
 def hasNaN(d):
     result = False
@@ -168,7 +168,7 @@ def set_value(d, d2):
 
 def savetext(d, name):
     for i in d: np.savetxt(file('debug_'+name+'.txt', 'w'), d[i])
-    
+
 def ordered(d):
     return C.OrderedDict(sorted(d.items()))
 
@@ -184,12 +184,12 @@ def orderedvals(ds):
 # Shuffle all elements of ndict
 # Assumes that each element of dict has some number of columns!
 def shuffleCols(d):
-    n_cols = d.itervalues().next().shape[1]
+    n_cols = next(iter(d.values())).shape[1]
     idx = np.arange(n_cols)
     np.random.shuffle(idx)
     for i in d:
         d[i] = d[i][:,idx]
-    
+
 # Save/Load ndict to compressed file
 # (a gzipped tar file, i.e. .tar.gz)
 # if addext=True, then '.ndict' will be appended to filename
@@ -219,7 +219,7 @@ def loadz(filename):
         names = tar.extractfile(members[1]).readlines()
         result = {names[i][:-1]: arrays['arr_'+str(i)] for i in range(len(names))}
     return ordered(result)
-    
+
 
 '''
 Functions for dictionaries of shared variables
@@ -229,7 +229,3 @@ def cloneZerosShared(d):
     for i in d:
         result[i] = theano.shared(d[i].get_value() * 0.)
     return result
-    
-    
-
-
