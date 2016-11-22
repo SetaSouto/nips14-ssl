@@ -10,14 +10,30 @@ import numpy as np
 
 
 class HyperspectralData:
-    def __init__(self, path="data/Hyperspectral Data/Labeled HSI/"):
+    def __init__(self, path="/home/fabian/DataScience/SemiSupervisedLearning/nips14-ssl/data/Hyperspectral Data/Labeled HSI/"):
         self.path = path
 
-    def load_numpy(self, n_train, n_valid=10000, n_test=10000, unlabeleds=True, mineralogy=True,
+    def load_pixels_labels(self, file="ALH1599-17-labeled.hdf5"):
+        """
+        Returns a numpy array with the pixels and another numpy array with the labels.
+
+        :param file: File to be loaded.
+        :return: Numpy array with pixels and a numpy array with the labels.
+        """
+
+        hdf5_file = self.get_path() + file
+
+        with h5py.File(hdf5_file) as f:
+            pixels = f['/hsimage/data'].value
+            labels = f['/hsimage/labels'].value
+
+        return pixels, labels
+
+    def load_numpy(self, n_train, n_valid=10000, n_test=10000, unlabeled=True, mineralogy=True,
                    file="ALH1599-17-labeled.hdf5"):
         """Returns numpy arrays with the data.
 
-        :param unlabeleds: Indicates if unlabeleds examples must be used.
+        :param unlabeled: Indicates if unlabeled examples must be used.
         :param mineralogy: Indicates if mineralogy data must be used. If not, lithology examples are used instead.
         :param n_train: Numbers of examples for training.
         :param n_valid: Numbers of examples for validation.
@@ -25,13 +41,9 @@ class HyperspectralData:
         :param file: File to be loaded.
         """
 
-        hdf5_file = self.getPath() + file
+        pixels, labels = self.load_pixels_labels(file)
 
-        with h5py.File(hdf5_file) as f:
-            pixels = f['/hsimage/data'].value
-            labels = f['/hsimage/labels'].value
-
-        if unlabeleds:
+        if unlabeled:
             labeled_indexes = labels > -1
         else:
             labeled_indexes = labels > 0
@@ -52,7 +64,7 @@ class HyperspectralData:
         pixels = np.transpose(pixels)
 
         # Normalize data: Max value can't be more than one.
-        pixels /= pixels.max() + 1
+        pixels = pixels / (pixels.max() + 1.0)
 
         # Now, select randomly the datasets
 
@@ -101,8 +113,27 @@ class HyperspectralData:
         """
         self.path = new_path
 
-    def get_split_data(self):
-        pass
+    def split_data(self, x, y):
+        """
+        Receives a dataset with some unlabeled samples. Returns the dataset divided in those that has labels and those
+        who don't.
+
+        :param x: Dataset.
+        :param y: Labels.
+        :return: Dataset divided in labeled and unlabeled.
+        """
+        labeled_indexes = y > 0
+        unlabeled_indexes = y == 0
+
+        # Select columns, keep the rows:
+        x_labeled = x[:, labeled_indexes]
+        y_labeled = y[labeled_indexes]
+        x_unlabeled = x[:, unlabeled_indexes]
+        y_unlabeled = y[unlabeled_indexes]
+
+        return x_labeled, y_labeled, x_unlabeled, y_unlabeled
+
+
 
 
 # Class for raise a match error between the labels and data.
