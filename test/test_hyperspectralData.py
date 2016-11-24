@@ -28,3 +28,21 @@ class TestHyperspectralData(TestCase):
         self.assertEqual(x_unlabeled.shape[1], y_unlabeled.shape[0])
         # Labeled + unlabeled = total:
         self.assertEqual(self.n_train, x_labeled.shape[1]+x_unlabeled.shape[1])
+
+    def test_to_one_hot(self):
+        # In mineralogy are 100 classes.
+        n_classes = 100
+        y_one_hot = HyperspectralData().to_one_hot(self.train_y, n_classes)
+        # It must have a row for each class:
+        self.assertEqual(n_classes, y_one_hot.shape[0])
+        # It must have a column for each label:
+        self.assertEqual(self.train_y.shape[0], y_one_hot.shape[1])
+
+        # It must have a 1 in the row indicated by train_y:
+        for i in range(y_one_hot.shape[1]):         # Iterate over the columns
+            if (self.train_y[i]==0):                # If it doesn't have a label the entire column must be zero
+                for j in range(y_one_hot.shape[0]): # Iterate over the rows of the column i
+                    self.assertEqual(0., y_one_hot[j, i])
+            else:
+                self.assertEqual(1., y_one_hot[self.train_y[i], i])
+

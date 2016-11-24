@@ -260,7 +260,7 @@ def main(n_z, n_hidden, dataset, seed, comment, gfx=True):
         # TODO: import more files: Edit hyperspectralData.py
 
         #I added the hyperspectralData file in the anglepy library
-        from anglepy.hyperspectralData import HyperspectralData
+        from hyperspectralData import HyperspectralData
 
         train_x, train_y, valid_x, valid_y, test_x, test_y = HyperspectralData().load_numpy(100000)
 

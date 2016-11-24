@@ -10,7 +10,8 @@ import numpy as np
 
 
 class HyperspectralData:
-    def __init__(self, path="/home/fabian/DataScience/SemiSupervisedLearning/nips14-ssl/data/Hyperspectral Data/Labeled HSI/"):
+    def __init__(self,
+                 path="/home/fabian/DataScience/SemiSupervisedLearning/nips14-ssl/data/Hyperspectral Data/Labeled HSI/"):
         self.path = path
 
     def load_pixels_labels(self, file="ALH1599-17-labeled.hdf5"):
@@ -133,7 +134,20 @@ class HyperspectralData:
 
         return x_labeled, y_labeled, x_unlabeled, y_unlabeled
 
+    def to_one_hot(self, y, n_classes):
+        """
+        Transform to one hot encoding an array with labels.
 
+        :param y: Labels.
+        :return: Labels in one hot encoding.
+        """
+
+        n_labels = y.shape[0]
+        ret = np.zeros((n_classes, n_labels))
+        ret[y, np.arange(n_labels)] = 1
+        # But this makes 1 whenever y is zero, so we must put zero in all the first row:
+        ret[0, :] = 0
+        return ret
 
 
 # Class for raise a match error between the labels and data.
