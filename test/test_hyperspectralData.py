@@ -26,3 +26,5 @@ class TestHyperspectralData(TestCase):
 
         self.assertEqual(x_labeled.shape[1], y_labeled.shape[0])
         self.assertEqual(x_unlabeled.shape[1], y_unlabeled.shape[0])
+        # Labeled + unlabeled = total:
+        self.assertEqual(self.n_train, x_labeled.shape[1]+x_unlabeled.shape[1])
