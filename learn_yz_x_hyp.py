@@ -8,17 +8,14 @@ import theano.tensor as T
 from adam import AdaM
 
 
-def main(n_passes, n_hidden, seed, alpha, n_minibatches):
+def main(n_passes, n_hidden, seed, alpha, n_minibatches, n_labeled, n_unlabeled, n_classes):
     """
     Learn a variational auto-encoder with generative model p(x,y,z)=p(y)p(z)p(x|y,z)
     And where 'x' is always observed and 'y' is _sometimes_ observed (hence semi-supervised).
     We're going to use q(y|x) as a classification model.
     """
 
-    # ------------------------
-    # SetaSouto:
     # Create the directory for the log and outputs.
-    # ------------------------
     logdir = 'results/learn_yz_x_hyp' + '-' + str(int(time.time())) + '/'
     if not os.path.exists(logdir): os.makedirs(logdir)
     print("---------------")
@@ -54,10 +51,7 @@ def main(n_passes, n_hidden, seed, alpha, n_minibatches):
                        prior_sd=1)
 
     # Load dataset:
-    n_labeled = 2000
-    n_unlabeled = 98000
-    n_classes = 100
-    x_l, y_l, x_u, y_u, valid_x, valid_y, test_x, test_y = load_dataset(n_labeled)
+    x_l, y_l, x_u, y_u, valid_x, valid_y, test_x, test_y = load_dataset(n_labeled, n_unlabeled, n_classes)
 
 
     # Extract features
@@ -140,8 +134,6 @@ def optim_vae_ss_adam(alpha, model_qy, model, x_labeled, x_unlabeled, n_y, u_ini
     minibatches = []
 
     n_labeled = next(iter(x_labeled.values())).shape[1]
-    print("DEBUGGER:")
-    print(n_labeled)
     n_batch_l = n_labeled / n_minibatches
     if (n_labeled % n_batch_l) != 0: raise Exception()
 
@@ -277,8 +269,11 @@ def load_dataset(n_labeled, n_unlabeled, n_classes):
     # Load dataset
     from hyperspectralData import HyperspectralData
 
+    print("---------------")
+    print("Loading labeled samples.")
     x_l, y_l, valid_x, valid_y, test_x, test_y = HyperspectralData().get_labeled_numpy(n_labeled, n_labeled, n_labeled)
-    x_u, y_u, _, _, _, _ = HyperspectralData().get_unlabeled_numpy(n_unlabeled, 0, 0)
+    print("Loading unlabeled samples.")
+    x_u, y_u, _, _, _, _ = HyperspectralData().get_unlabeled_numpy(n_unlabeled, 1, 1)
 
     # To one hot encoding:
     y_l = HyperspectralData().to_one_hot(y_l, n_classes)
