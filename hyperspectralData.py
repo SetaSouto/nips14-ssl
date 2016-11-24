@@ -30,11 +30,12 @@ class HyperspectralData:
 
         return pixels, labels
 
-    def load_numpy(self, n_train, n_valid=10000, n_test=10000, unlabeled=True, mineralogy=True,
+    def load_numpy(self, n_train, n_valid=10000, n_test=10000, labeled_and_unlabeled=True, labeled=True, mineralogy=True,
                    file="ALH1599-17-labeled.hdf5"):
         """Returns numpy arrays with the data.
 
-        :param unlabeled: Indicates if unlabeled examples must be used.
+        :param labeled_and_unlabeled: Indicates if unlabeled examples must be used with the labeled ones.
+        :param labeled: Indicates if in case that we want to use only labeled samples or unlabeled samples.
         :param mineralogy: Indicates if mineralogy data must be used. If not, lithology examples are used instead.
         :param n_train: Numbers of examples for training.
         :param n_valid: Numbers of examples for validation.
@@ -44,10 +45,12 @@ class HyperspectralData:
 
         pixels, labels = self.load_pixels_labels(file)
 
-        if unlabeled:
+        if labeled_and_unlabeled:
             labeled_indexes = labels > -1
-        else:
+        elif labeled:
             labeled_indexes = labels > 0
+        else:
+            labeled_indexes = labels == 0
 
         pixels = pixels[labeled_indexes]
         labels = labels[labeled_indexes]
@@ -149,6 +152,26 @@ class HyperspectralData:
         ret[0, :] = 0
         return ret
 
+    def get_labeled_numpy(self, n_train, n_valid, n_test):
+        """
+        Returns only labeled samples.
+        :param n_train: Number of samples for training.
+        :param n_valid: Number of samples for validation.
+        :param n_test: Number of samples for testing.
+        :return: train_x, train_y, valid_x, valid_y, test_x, test_y
+        """
+        return self.load_numpy(n_train, n_valid= n_valid, n_test=n_test, labeled_and_unlabeled=False,
+                               labeled = True)
+
+    def get_unlabeled_numpy(self, n_train, n_valid, n_test):
+        """
+        Returns only unlabeled samples.
+        :param n_train: Number of samples for training.
+        :param n_valid: Number of samples for validation.
+        :param n_test: Number of samples for testing.
+        :return: train_x, train_y, valid_x, valid_y, test_x, test_y
+        """
+        return self.load_numpy(n_train, n_valid, n_test, labeled_and_unlabeled=False, labeled = False)
 
 # Class for raise a match error between the labels and data.
 class MatchError(Exception):

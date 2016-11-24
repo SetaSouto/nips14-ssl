@@ -8,7 +8,7 @@ import theano.tensor as T
 from adam import AdaM
 
 
-def main(n_passes, n_labeled, n_z, n_hidden, dataset, seed, alpha, n_minibatches, comment):
+def main(n_passes, n_hidden, seed, alpha, n_minibatches):
     """
     Learn a variational auto-encoder with generative model p(x,y,z)=p(y)p(z)p(x|y,z)
     And where 'x' is always observed and 'y' is _sometimes_ observed (hence semi-supervised).
@@ -28,7 +28,7 @@ def main(n_passes, n_labeled, n_z, n_hidden, dataset, seed, alpha, n_minibatches
     np.random.seed(seed)
 
     # Load model for feature extraction
-    path = 'results/hyper_50-(500, 500)_longrun'
+    path = 'results/hyper_50-(500, 500)_longrun/'
     # Load the parameters of the model that has been trained previously:
     l1_v = ndict.loadz(path + 'v_best.ndict.tar.gz')
     l1_w = ndict.loadz(path + 'w_best.ndict.tar.gz')
@@ -53,14 +53,12 @@ def main(n_passes, n_labeled, n_z, n_hidden, dataset, seed, alpha, n_minibatches
                        nonlinear_p=nonlinear, type_px=type_px, type_qz=type_qz, type_pz=type_pz,
                        prior_sd=1)
 
-    # Load dataset
-    from hyperspectralData import HyperspectralData
-    # load train and test sets
-    n_samples = 100000
-    train_x, train_y, valid_x, valid_y, test_x, test_y = HyperspectralData().load_numpy(n_samples)
+    # Load dataset:
+    n_labeled = 2000
+    n_unlabeled = 98000
+    n_classes = 100
+    x_l, y_l, x_u, y_u, valid_x, valid_y, test_x, test_y = load_dataset(n_labeled)
 
-    # create labeled/unlabeled split in training set
-    x_l, y_l, x_u, y_u = HyperspectralData().split_data(train_x, train_y)
 
     # Extract features
 
@@ -77,19 +75,17 @@ def main(n_passes, n_labeled, n_z, n_hidden, dataset, seed, alpha, n_minibatches
     valid_x, _ = transform(l1_v, valid_x)
     test_x, _ = transform(l1_v, test_x)
 
-    n_x = np.sum(idx_keep)
-    n_y = 10
-
+    # Copied from learn_yz_x_ss:
+    n_x = l1_w[b'w0'].shape[1]
+    n_y = n_classes
     type_pz = 'gaussianmarg'
     type_px = 'gaussian'
     nonlinear = 'softplus'
 
-    colorImg = False
-
     # Init VAE model p(x,y,z)
     from anglepy.models.VAE_YZ_X import VAE_YZ_X
     uniform_y = True
-    model = VAE_YZ_X(n_x, n_y, n_hidden, n_z, n_hidden, nonlinear, nonlinear, type_px, type_qz="gaussianmarg",
+    model = VAE_YZ_X(n_x, n_y, n_hidden, n_z, n_hidden, nonlinear, nonlinear, type_px, type_qz=type_qz,
                      type_pz=type_pz, prior_sd=1, uniform_y=uniform_y)
     v, w = model.init_w(1e-3)
 
@@ -98,13 +94,6 @@ def main(n_passes, n_labeled, n_z, n_hidden, dataset, seed, alpha, n_minibatches
     n_units = [n_x] + list(n_hidden) + [n_y]
     model_qy = MLP_Categorical(n_units=n_units, prior_sd=1, nonlinearity=nonlinear)
     u = model_qy.init_w(1e-3)
-
-    # Just test
-    if False:
-        u = ndict.loadz('u.ndict.tar.gz')
-        v = ndict.loadz('v.ndict.tar.gz')
-        w = ndict.loadz('w.ndict.tar.gz')
-        pass
 
     # Progress hook
     t0 = time.time()
@@ -151,6 +140,8 @@ def optim_vae_ss_adam(alpha, model_qy, model, x_labeled, x_unlabeled, n_y, u_ini
     minibatches = []
 
     n_labeled = next(iter(x_labeled.values())).shape[1]
+    print("DEBUGGER:")
+    print(n_labeled)
     n_batch_l = n_labeled / n_minibatches
     if (n_labeled % n_batch_l) != 0: raise Exception()
 
@@ -274,3 +265,25 @@ def optim_vae_ss_adam(alpha, model_qy, model, x_labeled, x_unlabeled, n_y, u_ini
         n_L[0] = 0
 
     return testset_error
+
+def load_dataset(n_labeled, n_unlabeled, n_classes):
+    """
+    Loads the data with at least n_labeled labeled samples.
+
+    :param n_labeled: Number of samples with label.
+    :return: train_x_labeled, train_y_labeled, train_x_unlabeled, train_y_unlabeled, valid_x, valid_y, test_x, test_y
+    """
+
+    # Load dataset
+    from hyperspectralData import HyperspectralData
+
+    x_l, y_l, valid_x, valid_y, test_x, test_y = HyperspectralData().get_labeled_numpy(n_labeled, n_labeled, n_labeled)
+    x_u, y_u, _, _, _, _ = HyperspectralData().get_unlabeled_numpy(n_unlabeled, 0, 0)
+
+    # To one hot encoding:
+    y_l = HyperspectralData().to_one_hot(y_l, n_classes)
+    y_u = HyperspectralData().to_one_hot(y_u, n_classes)
+    valid_y = HyperspectralData().to_one_hot(valid_y, n_classes)
+    test_y = HyperspectralData().to_one_hot(test_y, n_classes)
+
+    return x_l, y_l, x_u, y_u, valid_x, valid_y, test_x, test_y
