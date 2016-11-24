@@ -89,10 +89,12 @@ def main(n_passes, n_hidden, seed, alpha, n_minibatches, n_labeled, n_unlabeled,
     model_qy = MLP_Categorical(n_units=n_units, prior_sd=1, nonlinearity=nonlinear)
     u = model_qy.init_w(1e-3)
 
+    write_headers(logdir)
+
     # Progress hook
     t0 = time.time()
 
-    def hook(t, u, v, w, ll):
+    def hook(step, u, v, w, ll):
 
         # Get classification error of validation and test sets
         def error(dataset_x, dataset_y):
@@ -102,18 +104,26 @@ def main(n_passes, n_hidden, seed, alpha, n_minibatches, n_labeled, n_unlabeled,
         valid_error = error(valid_x, valid_y)
         test_error = error(test_x, test_y)
 
-        # Log
+        # Save variables
         ndict.savez(u, logdir + 'u')
         ndict.savez(v, logdir + 'v')
         ndict.savez(w, logdir + 'w')
 
-        dt = time.time() - t0
+        time_elapsed = time.time() - t0
 
-        print(dt, t, ll, valid_error, test_error)
-        with open(logdir + 'hook.txt', 'a') as f:
-            print(f, dt, t, ll)
-            print('ValidSet error:', valid_error)
-            print('TestSet error:', test_error)
+        # This will be showing the current results and write them in a file:
+        with open(logdir + 'AA_results.txt', 'a') as file:
+            file.write(str(step) + ',' + str(time_elapsed) + ',' + str(valid_error) + ',' + str(test_error) + '\n')
+
+
+        print("---------------")
+        print("Current results:")
+        print(" ")
+        print("Step:", step)
+        print("Time elapsed:", time_elapsed)
+        print("Validset error:", valid_error)
+        print("Testset error:", test_error)
+        print("LogLikelihood:", ll)
 
         return valid_error
 
@@ -282,3 +292,12 @@ def load_dataset(n_labeled, n_unlabeled, n_classes):
     test_y = HyperspectralData().to_one_hot(test_y, n_classes)
 
     return x_l, y_l, x_u, y_u, valid_x, valid_y, test_x, test_y
+
+
+def write_headers(logdir):
+    # Write the headers for the csv file output:
+    with open(logdir + 'AA_results.txt', 'w') as file:
+        # Like a csv file:
+        file.write(
+            "Step" + ',' + "Time_elapsed" + ',' + "Validset_error" + ',' + "Testset_error" + '\n')
+        file.close()
