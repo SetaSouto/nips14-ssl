@@ -98,13 +98,17 @@ def main(n_passes, n_hidden, seed, alpha, n_minibatches, n_labeled, n_unlabeled,
 
         print("---------------")
         print("Current results:")
+        print("Step:", step)
         print(" ")
 
         # Get classification error of validation and test sets
         def error(dataset_x, dataset_y):
             _, _, _z = model_qy.gen_xz(u, {'x': dataset_x}, {})
-            print("  Predictions:", np.argmax(_z['py'], axis=0)[0:20])
-            print("  Real:       ", np.argmax(dataset_y, axis=0)[0:20])
+            n_examples = 20
+            max_row = dataset_y.shape[1]
+            example_rows = np.random.choice(max_row, size=n_examples, replace=False)
+            print("  Predictions:", np.argmax(_z['py'], axis=0)[example_rows])
+            print("  Real:       ", np.argmax(dataset_y, axis=0)[example_rows])
             return np.sum(np.argmax(_z['py'], axis=0) != np.argmax(dataset_y, axis=0)) / (0.0 + dataset_y.shape[1])
 
         print("Validset:")
@@ -123,7 +127,6 @@ def main(n_passes, n_hidden, seed, alpha, n_minibatches, n_labeled, n_unlabeled,
         with open(logdir + 'AA_results.txt', 'a') as file:
             file.write(str(step) + ',' + str(time_elapsed) + ',' + str(valid_error) + ',' + str(test_error) + '\n')
 
-        print("Step:", step)
         print("Time elapsed:", time_elapsed)
         print("Validset error:", valid_error)
         print("Testset error:", test_error)
