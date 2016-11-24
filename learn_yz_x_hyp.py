@@ -96,12 +96,20 @@ def main(n_passes, n_hidden, seed, alpha, n_minibatches, n_labeled, n_unlabeled,
 
     def hook(step, u, v, w, ll):
 
+        print("---------------")
+        print("Current results:")
+        print(" ")
+
         # Get classification error of validation and test sets
         def error(dataset_x, dataset_y):
             _, _, _z = model_qy.gen_xz(u, {'x': dataset_x}, {})
+            print("  Predictions:", np.argmax(_z['py'], axis=0)[0:20])
+            print("  Real:       ", np.argmax(dataset_y, axis=0)[0:20])
             return np.sum(np.argmax(_z['py'], axis=0) != np.argmax(dataset_y, axis=0)) / (0.0 + dataset_y.shape[1])
 
+        print("Validset:")
         valid_error = error(valid_x, valid_y)
+        print("Testset:")
         test_error = error(test_x, test_y)
 
         # Save variables
@@ -115,10 +123,6 @@ def main(n_passes, n_hidden, seed, alpha, n_minibatches, n_labeled, n_unlabeled,
         with open(logdir + 'AA_results.txt', 'a') as file:
             file.write(str(step) + ',' + str(time_elapsed) + ',' + str(valid_error) + ',' + str(test_error) + '\n')
 
-
-        print("---------------")
-        print("Current results:")
-        print(" ")
         print("Step:", step)
         print("Time elapsed:", time_elapsed)
         print("Validset error:", valid_error)
