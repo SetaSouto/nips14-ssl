@@ -7,6 +7,7 @@ Created on Sun Oct  9 18:46:17 2016
 
 import h5py
 import numpy as np
+import os
 
 
 class HyperspectralData:
@@ -14,24 +15,59 @@ class HyperspectralData:
                  path="/home/fabian/DataScience/SemiSupervisedLearning/nips14-ssl/data/Hyperspectral Data/Labeled HSI/"):
         self.path = path
 
-    def load_pixels_labels(self, file="ALH1599-17-labeled.hdf5"):
+    def get_path(self):
+        """
+        Returns the path where are the files.
+        """
+        return self.path
+
+    def set_path(self, new_path):
+        """
+        Sets the path where are the files.
+        """
+        self.path = new_path
+
+    def get_filenames(self, n_filenames):
+        """
+        Returns a list with n_filenames filenames in the directory indicated by path.
+        :return: List with files in self.path.
+        """
+        return os.listdir(self.get_path())[:n_filenames]
+
+    def load_pixels_labels(self, n_files=1):
         """
         Returns a numpy array with the pixels and another numpy array with the labels.
 
         :param file: File to be loaded.
         :return: Numpy array with pixels and a numpy array with the labels.
         """
-
-        hdf5_file = self.get_path() + file
-
-        with h5py.File(hdf5_file) as f:
-            pixels = f['/hsimage/data'].value
-            labels = f['/hsimage/labels'].value
+        if n_files<1:
+            raise Exception()
+        # First file:
+        pixels, labels = self.load_pixels_labels_by_filename(self.get_filenames(1)[0])
+        # The others files:
+        for filename in self.get_filenames(n_filenames=n_files)[1:]:
+            new_pixels, new_labels = self.load_pixels_labels_by_filename(filename)
+            pixels = np.concatenate((pixels, new_pixels), axis=0)
+            labels = np.concatenate((labels, new_labels), axis=0)
 
         return pixels, labels
 
-    def load_numpy(self, n_train, n_valid=10000, n_test=10000, labeled_and_unlabeled=True, labeled=True, mineralogy=True,
-                   file="ALH1599-17-labeled.hdf5"):
+    def load_pixels_labels_by_filename(self, filename):
+        """
+        Returns the values of the pixels and the labels for a given file.
+        :param filename: Filename to load.
+        :return: Pixels, labels.
+        """
+        hdf5_file = self.get_path() + filename
+        with h5py.File(hdf5_file) as f:
+            pixels = f['/hsimage/data'].value
+            labels = f['/hsimage/labels'].value
+        return pixels, labels
+
+    def load_numpy(self, n_train, n_valid=10000, n_test=10000, labeled_and_unlabeled=True, labeled=True,
+                   mineralogy=True,
+                   n_files=1):
         """Returns numpy arrays with the data.
 
         :param labeled_and_unlabeled: Indicates if unlabeled examples must be used with the labeled ones.
@@ -40,10 +76,10 @@ class HyperspectralData:
         :param n_train: Numbers of examples for training.
         :param n_valid: Numbers of examples for validation.
         :param n_test: Numbers of examples for testing.
-        :param file: File to be loaded.
+        :param n_files: From how many files we want to extract te samples.
         """
 
-        pixels, labels = self.load_pixels_labels(file)
+        pixels, labels = self.load_pixels_labels(n_files)
 
         if labeled_and_unlabeled:
             labeled_indexes = labels > -1
@@ -105,18 +141,6 @@ class HyperspectralData:
         # If we don't have errors, return.
         return train_x, train_y, valid_x, valid_y, test_x, test_y
 
-    def get_path(self):
-        """
-        Returns the path where are the files.
-        """
-        return self.path
-
-    def set_path(self, new_path):
-        """
-        Sets the path where are the files.
-        """
-        self.path = new_path
-
     def split_data(self, x, y):
         """
         Receives a dataset with some unlabeled samples. Returns the dataset divided in those that has labels and those
@@ -152,16 +176,16 @@ class HyperspectralData:
         ret[0, :] = 0
         return ret
 
-    def get_labeled_numpy(self, n_train, n_valid, n_test):
+    def get_labeled_numpy(self, n_train, n_valid, n_test, n_files=1):
         """
         Returns only labeled samples.
         :param n_train: Number of samples for training.
         :param n_valid: Number of samples for validation.
         :param n_test: Number of samples for testing.
+        :param n_files: Number of files to check to extract the amount of samples.
         :return: train_x, train_y, valid_x, valid_y, test_x, test_y
         """
-        return self.load_numpy(n_train, n_valid= n_valid, n_test=n_test, labeled_and_unlabeled=False,
-                               labeled = True)
+        return self.load_numpy(n_train, n_valid, n_test, labeled_and_unlabeled=False, labeled=True)
 
     def get_unlabeled_numpy(self, n_train, n_valid, n_test):
         """
@@ -171,7 +195,8 @@ class HyperspectralData:
         :param n_test: Number of samples for testing.
         :return: train_x, train_y, valid_x, valid_y, test_x, test_y
         """
-        return self.load_numpy(n_train, n_valid, n_test, labeled_and_unlabeled=False, labeled = False)
+        return self.load_numpy(n_train, n_valid, n_test, labeled_and_unlabeled=False, labeled=False)
+
 
 # Class for raise a match error between the labels and data.
 class MatchError(Exception):
