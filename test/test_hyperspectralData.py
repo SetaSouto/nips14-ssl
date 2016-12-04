@@ -45,4 +45,3 @@ class TestHyperspectralData(TestCase):
                     self.assertEqual(0., y_one_hot[j, i])
             else:
                 self.assertEqual(1., y_one_hot[self.train_y[i], i])
-

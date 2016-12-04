@@ -51,7 +51,9 @@ def main(n_passes, n_hidden, seed, alpha, n_minibatches, n_labeled, n_unlabeled,
                        prior_sd=1)
 
     # Load dataset:
-    x_l, y_l, x_u, y_u, valid_x, valid_y, test_x, test_y = load_dataset(n_labeled, n_unlabeled, n_classes)
+    from hyperspectralData import HyperspectralData
+    x_l, y_l, x_u, y_u, valid_x, valid_y, test_x, test_y = HyperspectralData().load_dataset_m2(n_unlabeled=n_unlabeled,
+                                                                                               n_classes=n_classes)
 
 
     # Extract features
@@ -274,32 +276,6 @@ def optim_vae_ss_adam(alpha, model_qy, model, x_labeled, x_unlabeled, n_y, u_ini
         n_L[0] = 0
 
     return testset_error
-
-def load_dataset(n_labeled, n_unlabeled, n_classes):
-    """
-    Loads the data with at least n_labeled labeled samples.
-
-    :param n_labeled: Number of samples with label.
-    :return: train_x_labeled, train_y_labeled, train_x_unlabeled, train_y_unlabeled, valid_x, valid_y, test_x, test_y
-    """
-
-    # Load dataset
-    from hyperspectralData import HyperspectralData
-
-    print("---------------")
-    print("Loading labeled samples.")
-    x_l, y_l, valid_x, valid_y, test_x, test_y = HyperspectralData().get_labeled_numpy(n_labeled, n_labeled, n_labeled)
-    print("Loading unlabeled samples.")
-    x_u, y_u, _, _, _, _ = HyperspectralData().get_unlabeled_numpy(n_unlabeled, 1, 1)
-
-    # To one hot encoding:
-    y_l = HyperspectralData().to_one_hot(y_l, n_classes)
-    y_u = HyperspectralData().to_one_hot(y_u, n_classes)
-    valid_y = HyperspectralData().to_one_hot(valid_y, n_classes)
-    test_y = HyperspectralData().to_one_hot(test_y, n_classes)
-
-    return x_l, y_l, x_u, y_u, valid_x, valid_y, test_x, test_y
-
 
 def write_headers(logdir):
     # Write the headers for the csv file output:

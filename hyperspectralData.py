@@ -34,7 +34,7 @@ class HyperspectralData:
         """
         return os.listdir(self.get_path())[:n_filenames]
 
-    def load_pixels_labels(self, n_files=1, labeled=False):
+    def load_pixels_labels(self, n_files=1, labeled=False, mineralogy=True):
         """
         Returns a numpy array with the pixels and another numpy array with the labels.
 
@@ -44,16 +44,16 @@ class HyperspectralData:
         if n_files<1:
             raise Exception()
         # First file:
-        pixels, labels = self.load_pixels_labels_by_filename(self.get_filenames(1)[0], labeled)
+        pixels, labels = self.load_pixels_labels_by_filename(self.get_filenames(1)[0], labeled, mineralogy)
         # The others files:
         for filename in self.get_filenames(n_filenames=n_files)[1:]:
-            new_pixels, new_labels = self.load_pixels_labels_by_filename(filename, labeled)
+            new_pixels, new_labels = self.load_pixels_labels_by_filename(filename, labeled, mineralogy)
             pixels = np.concatenate((pixels, new_pixels), axis=0)
             labels = np.concatenate((labels, new_labels), axis=0)
 
         return pixels, labels
 
-    def load_pixels_labels_by_filename(self, filename, labeled=False):
+    def load_pixels_labels_by_filename(self, filename, labeled=False, mineralogy=True):
         """
         Returns the values of the pixels and the labels for a given file.
         :param filename: Filename to load.
@@ -65,7 +65,12 @@ class HyperspectralData:
             labels = f['/hsimage/labels'].value
         if labeled:
             indexes = labels > 0
-            return pixels[indexes], labels[indexes]
+            pixels = pixels[indexes]
+            labels = labels[indexes]
+        if mineralogy:
+            indexes = labels < 100
+            pixels = pixels[indexes]
+            labels = labels[indexes]
         return pixels, labels
 
     def load_numpy(self, n_train, n_valid=10000, n_test=10000, labeled_and_unlabeled=True, labeled=True,
@@ -199,6 +204,70 @@ class HyperspectralData:
         :return: train_x, train_y, valid_x, valid_y, test_x, test_y
         """
         return self.load_numpy(n_train, n_valid, n_test, labeled_and_unlabeled=False, labeled=False)
+
+    def load_dataset_m2(self, n_unlabeled, n_files=10, n_max=5000, n_classes=100):
+        """
+        A new way to load the datasets, because the old way doesn't give a uniform distribuiton of labels.
+        By this way, we load n_files files, and try to keep no more that n_max samples by class, so the labels that
+        are the majority in the files are not the majority in the return of this function.
+
+        :param n_unlabeled: Number of unlabeled samples to load.
+        :param n_files: Number of files where the data will be loaded.
+        :param n_max: Number of max samples per class.
+        :param n_classes: Number of classes in the data, it is usefull to pass the labels to one hot encoding.
+        :return: train_x_labeled, train_y_labeled, train_x_unlabeled, train_y_unlabeled, valid_x, valid_y, test_x, test_y
+        """
+        print("---------------")
+        print("Loading samples.")
+        pixels, labels = self.load_pixels_labels(n_files=n_files, labeled=True, mineralogy=True)
+
+        print("Formatting data.")
+        # The shape is (n_examples, data), we need (data, n_examples)
+        pixels = np.transpose(pixels)
+        # Normalize data: Max value can't be more than one.
+        pixels = pixels / (pixels.max() + 1.0)
+
+        # Iterate over the labels, delete samples if we have more than 5000
+        for label in range(labels.max() + 1):
+            # How many of them are:
+            indexes = labels == label
+            n = labels[indexes].shape[0]
+            if n > n_max:
+                indexes_to_delete = np.random.choice(indexes, size=(n - n_max), replace=False)
+                pixels = np.delete(pixels, indexes_to_delete, axis=1)
+                labels = np.delete(labels, indexes_to_delete, axis=0)
+
+        # To one hot encoding
+        labels = self.to_one_hot(labels, n_classes)
+        # Select the rows randomnly
+        n_total = pixels.shape[1]
+        print("Number of labeled samples loaded:", n_total)
+        columns = np.random.choice(n_total, size=n_total, replace=False)
+        n_train = n_total/2 # Half is for training
+        n_rest = n_total/4  # Valid and test have the other half
+        # Indexes
+        ind_train = columns[0:n_train]
+        ind_valid = columns[n_train:(n_train + n_rest)]
+        ind_test = columns[(n_train + n_rest): (2*n_rest)]
+
+        # Select data:
+        train_xl = pixels[:, ind_train]
+        train_yl = labels[:, ind_train]
+
+        valid_x = pixels[:, ind_valid]
+        valid_y = labels[:, ind_valid]
+
+        test_x = pixels[:, ind_test]
+        test_y = labels[:, ind_test]
+
+        # Now, load unlabeled samples:
+        print("Loading unlabeled samples.")
+        x_u, y_u, _, _, _, _ = self.get_unlabeled_numpy(n_unlabeled, 1, 1)
+        # To one hot encoding:
+        y_u = self.to_one_hot(y_u, n_classes)
+
+        return train_xl, train_yl, x_u, y_u, valid_x, valid_y, test_x, test_y
+
 
 
 # Class for raise a match error between the labels and data.
