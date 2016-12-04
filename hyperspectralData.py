@@ -34,7 +34,7 @@ class HyperspectralData:
         """
         return os.listdir(self.get_path())[:n_filenames]
 
-    def load_pixels_labels(self, n_files=1):
+    def load_pixels_labels(self, n_files=1, labeled=False):
         """
         Returns a numpy array with the pixels and another numpy array with the labels.
 
@@ -44,16 +44,16 @@ class HyperspectralData:
         if n_files<1:
             raise Exception()
         # First file:
-        pixels, labels = self.load_pixels_labels_by_filename(self.get_filenames(1)[0])
+        pixels, labels = self.load_pixels_labels_by_filename(self.get_filenames(1)[0], labeled)
         # The others files:
         for filename in self.get_filenames(n_filenames=n_files)[1:]:
-            new_pixels, new_labels = self.load_pixels_labels_by_filename(filename)
+            new_pixels, new_labels = self.load_pixels_labels_by_filename(filename, labeled)
             pixels = np.concatenate((pixels, new_pixels), axis=0)
             labels = np.concatenate((labels, new_labels), axis=0)
 
         return pixels, labels
 
-    def load_pixels_labels_by_filename(self, filename):
+    def load_pixels_labels_by_filename(self, filename, labeled=False):
         """
         Returns the values of the pixels and the labels for a given file.
         :param filename: Filename to load.
@@ -63,6 +63,9 @@ class HyperspectralData:
         with h5py.File(hdf5_file) as f:
             pixels = f['/hsimage/data'].value
             labels = f['/hsimage/labels'].value
+        if labeled:
+            indexes = labels > 0
+            return pixels[indexes], labels[indexes]
         return pixels, labels
 
     def load_numpy(self, n_train, n_valid=10000, n_test=10000, labeled_and_unlabeled=True, labeled=True,
