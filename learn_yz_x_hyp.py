@@ -8,7 +8,7 @@ import theano.tensor as T
 from adam import AdaM
 
 
-def main(n_passes, n_hidden, seed, alpha, n_minibatches, n_labeled, n_unlabeled, n_classes):
+def main(n_passes, n_hidden, seed, alpha, n_minibatches, n_unlabeled, n_classes):
     """
     Learn a variational auto-encoder with generative model p(x,y,z)=p(y)p(z)p(x|y,z)
     And where 'x' is always observed and 'y' is _sometimes_ observed (hence semi-supervised).
