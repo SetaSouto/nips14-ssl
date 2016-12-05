@@ -230,10 +230,10 @@ class HyperspectralData:
         # Iterate over the labels, delete samples if we have more than 5000
         for label in range(labels.max() + 1):
             # How many of them are:
-            indexes = labels == label
-            n = labels[indexes].shape[0]
+            mask = labels == label
+            n = labels[mask].shape[0]
             if n > n_max:
-                indexes_to_delete = np.random.choice(indexes, size=(n - n_max), replace=False)
+                indexes_to_delete = np.random.choice(np.where(mask)[0], size=(n - n_max), replace=False)
                 pixels = np.delete(pixels, indexes_to_delete, axis=1)
                 labels = np.delete(labels, indexes_to_delete, axis=0)
 
@@ -243,12 +243,12 @@ class HyperspectralData:
         n_total = pixels.shape[1]
         print("Number of labeled samples loaded:", n_total)
         columns = np.random.choice(n_total, size=n_total, replace=False)
-        n_train = n_total/2 # Half is for training
-        n_rest = n_total/4  # Valid and test have the other half
+        n_train = int(n_total/2) # Half is for training
+        n_rest = int(n_total/4)  # Valid and test have the other half
         # Indexes
         ind_train = columns[0:n_train]
         ind_valid = columns[n_train:(n_train + n_rest)]
-        ind_test = columns[(n_train + n_rest): (2*n_rest)]
+        ind_test = columns[(n_train + n_rest): (n_train + 2*n_rest)]
 
         # Select data:
         train_xl = pixels[:, ind_train]
