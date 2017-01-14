@@ -43,7 +43,6 @@ def main(n_passes, n_hidden, seed, alpha, n_minibatches, n_unlabeled, n_classes)
     type_qz = 'gaussianmarg'
     type_pz = 'gaussianmarg'
 
-
     # Create the M1:
     from anglepy.models.VAE_Z_X import VAE_Z_X
     l1_model = VAE_Z_X(n_x=n_x, n_hidden_q=n_h, n_z=n_z, n_hidden_p=n_h, nonlinear_q=nonlinear,
@@ -54,7 +53,12 @@ def main(n_passes, n_hidden, seed, alpha, n_minibatches, n_unlabeled, n_classes)
     from hyperspectralData import HyperspectralData
     x_l, y_l, x_u, y_u, valid_x, valid_y, test_x, test_y = HyperspectralData().load_dataset_m2(n_unlabeled=n_unlabeled,
                                                                                                n_classes=n_classes)
-
+    n_labeled = x_l.shape[1]
+    if n_labeled % n_minibatches != 0:
+        # We need to delete some samples
+        indexes_to_delete = np.random.choice(range(n_labeled), size=(n_labeled % n_minibatches), replace=False)
+        x_l = np.delete(x_l, indexes_to_delete, axis=1)
+        y_l = np.delete(y_l, indexes_to_delete, axis=1)
 
     # Extract features
 
@@ -154,11 +158,15 @@ def optim_vae_ss_adam(alpha, model_qy, model, x_labeled, x_unlabeled, n_y, u_ini
 
     n_labeled = next(iter(x_labeled.values())).shape[1]
     n_batch_l = n_labeled / n_minibatches
-    if (n_labeled % n_batch_l) != 0: raise Exception()
+    if (n_labeled % n_batch_l) != 0:
+        raise Exception()
+    n_batch_l = int(n_batch_l)
 
     n_unlabeled = next(iter(x_unlabeled.values())).shape[1]
     n_batch_u = n_unlabeled / n_minibatches
-    if (n_unlabeled % n_batch_u) != 0: raise Exception()
+    if (n_unlabeled % n_batch_u) != 0:
+        raise Exception()
+    n_batch_u = int(n_batch_u)
 
     n_tot = n_labeled + n_unlabeled
 
@@ -276,6 +284,7 @@ def optim_vae_ss_adam(alpha, model_qy, model, x_labeled, x_unlabeled, n_y, u_ini
         n_L[0] = 0
 
     return testset_error
+
 
 def write_headers(logdir):
     # Write the headers for the csv file output:
