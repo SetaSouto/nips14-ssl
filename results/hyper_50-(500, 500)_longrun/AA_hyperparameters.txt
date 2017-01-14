@@ -1,0 +1,10 @@
+L_valid: 1
+type_qz: gaussianmarg
+type_pz: gaussianmarg
+Nonlinear: softplus
+type_px: bernoulli
+n_train: 100000
+n_batch: 1000
+colorImg: False
+bernoulli_x: False
+byteToFloat: False

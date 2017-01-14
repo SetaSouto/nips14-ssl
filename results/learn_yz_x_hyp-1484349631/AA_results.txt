@@ -1,0 +1,2 @@
+Step,Time_elapsed,Validset_error,Testset_error
+0,2503.589153766632,0.836326530612,0.827210884354
